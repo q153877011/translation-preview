@@ -57,11 +57,31 @@ function escapeHTML(str) {
     .replace(/'/g, '&#39;');
 }
 
+// 通用分割函数，兼容--后跟多个逗号再跟--
+function splitTables(str) {
+  // 匹配--,*,--，即--后跟至少2个逗号再跟--
+  return str.split(/--,+--/);
+}
+
 export default function Home() {
   const [tables, setTables] = useState([]);
   const [error, setError] = useState("");
   const [editing, setEditing] = useState({ tableIdx: null, rowIdx: null, colIdx: null });
   const [editValue, setEditValue] = useState("");
+  const [inputValue, setInputValue] = useState("");
+
+  // 手动输入渲染
+  const handleInputRender = () => {
+    if (!inputValue.trim()) {
+      setError('请输入或粘贴csv内容');
+      setTables([]);
+      return;
+    }
+    const tableStrs = splitTables(inputValue);
+    const parsedTables = tableStrs.map(tableStr => parseCSV(tableStr.trim())).filter(t => t.length > 0);
+    setTables(parsedTables);
+    setError('');
+  };
 
   // 剪贴板读取并渲染
   const handlePaste = async () => {
@@ -73,7 +93,7 @@ export default function Home() {
           setTables([]);
           return;
         }
-        const tableStrs = text.split('--,,--');
+        const tableStrs = splitTables(text);
         const parsedTables = tableStrs.map(tableStr => parseCSV(tableStr.trim())).filter(t => t.length > 0);
         setTables(parsedTables);
         setError('');
@@ -158,8 +178,18 @@ export default function Home() {
       </Head>
       <div style={{padding: '32px', fontFamily: 'sans-serif'}}>
         <h1>CSV 多表格渲染</h1>
-        <button onClick={handlePaste} style={{marginBottom: 16, padding: '6px 16px', fontSize: 16}}>从剪贴板粘贴并渲染</button>
-        <button onClick={handleExport} style={{marginLeft: 12, marginBottom: 16, padding: '6px 16px', fontSize: 16}}>导出为CSV</button>
+        <div style={{marginBottom: 16}}>
+          <textarea
+            value={inputValue}
+            onChange={e => setInputValue(e.target.value)}
+            rows={6}
+            style={{width: '100%', maxWidth: 800, fontSize: 14, fontFamily: 'inherit', marginBottom: 8}}
+            placeholder="在此粘贴或输入csv内容"
+          />
+          <button onClick={handleInputRender} style={{marginRight: 12, padding: '6px 16px', fontSize: 16}}>渲染输入内容</button>
+          <button onClick={handlePaste} style={{marginRight: 12, padding: '6px 16px', fontSize: 16}}>从剪贴板粘贴并渲染</button>
+          <button onClick={handleExport} style={{padding: '6px 16px', fontSize: 16}}>导出为CSV</button>
+        </div>
         {error && <div style={{color:'#888', margin:'20px 0'}}>{error}</div>}
         {tables.map((data, tableIdx) => (
           <table key={tableIdx} style={{ borderCollapse: 'collapse', margin: '24px 0', width: '100%' }}>

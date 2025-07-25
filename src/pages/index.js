@@ -69,6 +69,10 @@ export default function Home() {
   const [editing, setEditing] = useState({ tableIdx: null, rowIdx: null, colIdx: null });
   const [editValue, setEditValue] = useState("");
   const [inputValue, setInputValue] = useState("");
+  const [clipboardSupported, setClipboardSupported] = useState(null);
+  const [showInput, setShowInput] = useState(false);
+
+  // 不再页面加载时检测剪贴板API，改为点击时检测
 
   // 手动输入渲染
   const handleInputRender = () => {
@@ -102,8 +106,8 @@ export default function Home() {
         setTables([]);
       }
     } else {
-      setError('当前浏览器不支持剪贴板API');
-      setTables([]);
+      setShowInput(true);
+      setError('当前浏览器不支持剪贴板API，请手动输入或粘贴csv内容');
     }
   };
 
@@ -178,18 +182,24 @@ export default function Home() {
       </Head>
       <div style={{padding: '32px', fontFamily: 'sans-serif'}}>
         <h1>CSV 多表格渲染</h1>
-        <div style={{marginBottom: 16}}>
-          <textarea
-            value={inputValue}
-            onChange={e => setInputValue(e.target.value)}
-            rows={6}
-            style={{width: '100%', maxWidth: 800, fontSize: 14, fontFamily: 'inherit', marginBottom: 8}}
-            placeholder="在此粘贴或输入csv内容"
-          />
-          <button onClick={handleInputRender} style={{marginRight: 12, padding: '6px 16px', fontSize: 16}}>渲染输入内容</button>
-          <button onClick={handlePaste} style={{marginRight: 12, padding: '6px 16px', fontSize: 16}}>从剪贴板粘贴并渲染</button>
-          <button onClick={handleExport} style={{padding: '6px 16px', fontSize: 16}}>导出为CSV</button>
-        </div>
+        {!showInput && (
+          <div style={{marginBottom: 16}}>
+            <button onClick={handlePaste} style={{padding: '6px 16px', fontSize: 16}}>从剪贴板粘贴并渲染</button>
+          </div>
+        )}
+        {showInput && (
+          <div style={{marginBottom: 16}}>
+            <textarea
+              value={inputValue}
+              onChange={e => setInputValue(e.target.value)}
+              rows={6}
+              style={{width: '100%', maxWidth: 800, fontSize: 14, fontFamily: 'inherit', marginBottom: 8}}
+              placeholder="在此粘贴或输入csv内容"
+            />
+            <button onClick={handleInputRender} style={{marginRight: 12, padding: '6px 16px', fontSize: 16}}>渲染输入内容</button>
+            <button onClick={handleExport} style={{padding: '6px 16px', fontSize: 16}}>导出为CSV</button>
+          </div>
+        )}
         {error && <div style={{color:'#888', margin:'20px 0'}}>{error}</div>}
         {tables.map((data, tableIdx) => (
           <table key={tableIdx} style={{ borderCollapse: 'collapse', margin: '24px 0', width: '100%' }}>
